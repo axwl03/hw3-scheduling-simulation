@@ -54,4 +54,13 @@ typedef struct
 /*********** resource configuration type definition **********************/
 typedef uint8 resource_type;
 
+/*********** type define by myself ***************************************/
+#include <sys/queue.h>
+LIST_HEAD(queuehead, queue_entry);
+struct queue_entry
+{
+    task_const_type task;
+    LIST_ENTRY(queue_entry) queue_entries;
+};
+
 #endif /* #ifndef TYPEDEFINE_H */

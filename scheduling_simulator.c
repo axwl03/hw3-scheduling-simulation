@@ -1,7 +1,7 @@
 #include "resource.h"
 #include "task.h"
 
-
+struct queuehead ready_queue_head;
 int main()
 {
     printf("T1: %d\n", activate_task(T1));
