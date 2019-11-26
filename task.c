@@ -17,12 +17,19 @@ status_type activate_task(task_type id)
     }
     np->task = task_const[id];
     LIST_INSERT_HEAD(&ready_queue_head, np, queue_entries);
+    // need scheduling decision
     return STATUS_OK;
 }
 
 status_type terminate_task(void)
 {
-    status_type result = STATUS_OK;
+    /* check whether calling task still occupies resource */
+    for(int i = 0; i < RESOURCES_COUNT; ++i)
+        if(resource_owner[i] == running->task.id)
+            return STATUS_ERROR;
 
-    return result;
+    /* terminate calling task */
+    free(running);
+    // need scheduling decision
+    return STATUS_OK;
 }
