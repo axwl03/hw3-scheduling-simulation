@@ -56,10 +56,12 @@ typedef uint8 resource_type;
 
 /*********** type define by myself ***************************************/
 #include <sys/queue.h>
+#include <ucontext.h>
 LIST_HEAD(queuehead, queue_entry);
 struct queue_entry
 {
     task_const_type task;
+    ucontext_t *context_p;
     LIST_ENTRY(queue_entry) queue_entries;
 };
 

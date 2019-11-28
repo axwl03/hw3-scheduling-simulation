@@ -18,7 +18,7 @@ status_type release_resource(resource_type id)
     {
         resource_owner[id] = 0;
         running->task.static_priority = task_const[running->task.id].static_priority;
-        // need scheduling decision
+        swapcontext(running->context_p, &schedular_context);
         return STATUS_OK;
     }
     else return STATUS_ERROR;		// not occupied by the calling task

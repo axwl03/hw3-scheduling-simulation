@@ -16,8 +16,20 @@ status_type activate_task(task_type id)
         exit(1);
     }
     np->task = task_const[id];
+    np->context_p = NULL;
     LIST_INSERT_HEAD(&ready_queue_head, np, queue_entries);
-    // need scheduling decision
+    if(running->context_p == NULL)
+    {
+        running->context_p = malloc(sizeof(ucontext_t));
+        if(running->context_p == NULL)
+        {
+            printf("malloc failed\n");
+            exit(1);
+        }
+    }
+    printf("swap\n");
+    printf("swapcontext ret: %d\n", swapcontext(running->context_p, &schedular_context));
+    printf("return back\n");
     return STATUS_OK;
 }
 
@@ -30,6 +42,6 @@ status_type terminate_task(void)
 
     /* terminate calling task */
     free(running);
-    // need scheduling decision
+    running = NULL;
     return STATUS_OK;
 }
