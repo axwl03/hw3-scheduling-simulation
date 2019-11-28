@@ -4,9 +4,17 @@ status_type activate_task(task_type id)
 {
     /* check whether task is in ready queue */
     struct queue_entry *np;
-    for(np = ready_queue_head.lh_first; np != NULL; np = np->queue_entries.le_next)
+    for(np = ready_queue_head.tqh_first; np != NULL; np = np->queue_entries.tqe_next)
+    {
         if(np->task.id == id)
+        {
             return STATUS_ERROR;
+        }
+    }
+    if(running->task.id == id)
+    {
+        return STATUS_ERROR;
+    }
 
     /* insert task into ready queue */
     np = malloc(sizeof(struct queue_entry));
@@ -17,19 +25,8 @@ status_type activate_task(task_type id)
     }
     np->task = task_const[id];
     np->context_p = NULL;
-    LIST_INSERT_HEAD(&ready_queue_head, np, queue_entries);
-    if(running->context_p == NULL)
-    {
-        running->context_p = malloc(sizeof(ucontext_t));
-        if(running->context_p == NULL)
-        {
-            printf("malloc failed\n");
-            exit(1);
-        }
-    }
-    printf("swap\n");
-    printf("swapcontext ret: %d\n", swapcontext(running->context_p, &schedular_context));
-    printf("return back\n");
+    TAILQ_INSERT_TAIL(&ready_queue_head, np, queue_entries);
+    swapcontext(running->context_p, &schedular_context);
     return STATUS_OK;
 }
 

@@ -1,6 +1,7 @@
 #include "resource.h"
 #include "task.h"
 #include <ucontext.h>
+#define MEM 8192
 
 int resource_owner[RESOURCES_COUNT];
 struct queue_entry *running = NULL;
@@ -29,20 +30,30 @@ int main()
         }
         np->task = task_const[auto_start_tasks_list[i]];
         np->context_p = NULL;
-        LIST_INSERT_HEAD(&ready_queue_head, np, queue_entries);
+        TAILQ_INSERT_HEAD(&ready_queue_head, np, queue_entries);
     }
 
     /* schedule and run */
     while(1)
     {
-        getcontext(&schedular_context);
         schedule_task();
-        printf("run T%d\n", running->task.id);
         if(running->context_p == NULL)
-            (*(running->task.entry))();
+        {
+            running->context_p = malloc(sizeof(ucontext_t));
+            if(running->context_p == NULL)
+            {
+                printf("malloc failed\n");
+                exit(1);
+            }
+            getcontext(running->context_p);
+            running->context_p->uc_stack.ss_sp = malloc(MEM);
+            running->context_p->uc_stack.ss_size = MEM;
+            running->context_p->uc_link = &schedular_context;
+            makecontext(running->context_p, running->task.entry, 0);
+            swapcontext(&schedular_context, running->context_p);
+        }
         else
         {
-            printf("jump back to T%d\n", running->task.id);
             setcontext(running->context_p);
         }
     }
@@ -51,17 +62,16 @@ int main()
 
 void schedule_task()
 {
-    printf("schedule task\n");
     struct queue_entry *np, *max_priority_np;
     if(running == NULL)
-        max_priority_np = ready_queue_head.lh_first;
+        max_priority_np = ready_queue_head.tqh_first;
     else
         max_priority_np = running;
-    for(np = ready_queue_head.lh_first; np != NULL; np = np->queue_entries.le_next)
+    for(np = ready_queue_head.tqh_first; np != NULL; np = np->queue_entries.tqe_next)
         if(np->task.static_priority > max_priority_np->task.static_priority)
             max_priority_np = np;
     if(running != NULL)
-        LIST_INSERT_HEAD(&ready_queue_head, running, queue_entries);
-    LIST_REMOVE(max_priority_np, queue_entries);
+        TAILQ_INSERT_HEAD(&ready_queue_head, running, queue_entries);
+    TAILQ_REMOVE(&ready_queue_head, max_priority_np, queue_entries);
     running = max_priority_np;
 }
